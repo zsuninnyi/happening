@@ -70,14 +70,14 @@ Database: PostgreSQL
 
 ## Out of the Scope
 
-Geo, keywords, free text for events
-Live feeds from news/markets/disaster APIs
-Smart ranking, ML, “importance” inference
-Full auth (SSO, invites, permissions matrix)
-Multi-tenant orgs, billing, rate plans
-Rich Slack apps (OAuth install, interactive messages)
-Guaranteed delivery, retries with backoff, DLQs (log failure is enough)
-Mobile apps, push, SMS, webhooks as user channels
-Real-time UI (websockets)
-Beautiful design system / marketing site
-Horizontal scale, multi-region, observability suite
+- Geo, keywords, free text for events
+- Live feeds from news/markets/disaster APIs
+- Smart ranking, ML, “importance” inference
+- Full auth (SSO, invites, permissions matrix)
+- Multi-tenant orgs, billing, rate plans
+- Rich Slack apps (OAuth install, interactive messages)
+- Guaranteed delivery, retries with backoff, DLQs (log failure is enough)
+- Mobile apps, push, SMS, webhooks as user channels
+- Real-time UI (websockets)
+- Beautiful design system / marketing site
+- Horizontal scale, multi-region, observability suite
