@@ -87,16 +87,24 @@ deliveries
   event_id      FK → events
   alert_id      FK → alerts
   user_id       FK → users
+  dedupe_key    text not null -- external_id ?? event.id (set at write time)
   channel       text
   destination   text
-  status        text          -- sent|failed|skipped_duplicate
+  status        text          -- sent|failed (no skipped_duplicate rows)
   error         text null
   created_at    timestamptz
 
-  unique (alert_id, dedupe_key)  -- dedupe_key = external_id or event_id
+  unique (alert_id, dedupe_key)
 ```
 
 **Seed:** 1 admin + 1–2 users. No other tables.
+
+**Dedupe semantics:**
+- `dedupe_key` = `event.externalId ?? event.id`
+- Unique `(alert_id, dedupe_key)` means the alert was already processed for that identity
+- On hit: **do not insert a second row**; only bump `skipped` in the response counts
+- `failed` is **terminal** for that key; retry requires a new `externalId` (or a new event id if none was set)
+- There is no `skipped_duplicate` delivery status/row
 
 ## API endpoints
 
@@ -129,7 +137,7 @@ POST /api/admin/events
   1. Validate payload (category/severity enums)
   2. Persist Event
   3. Load enabled alerts
-  4. Matcher: category ∈ alert.categories AND severity ≥ minSeverity
+  4. Matcher: category ∈ alert.categories AND rank(severity) ≥ rank(minSeverity)
   5. For each match → notification flow (below)
   6. Respond with event + counts { matched, sent, failed, skipped }
 ```
@@ -142,10 +150,20 @@ An alert matches an event when all are true:
 
 1. `alert.enabled === true`
 2. `event.category` is in `alert.categories`
-3. `event.severity` ≥ `alert.minSeverity` (order: low < medium < high)
-4. Dedup gate has not already produced a delivery for this alert + event identity
+3. `event.severity` ≥ `alert.minSeverity` using the ordinal map below (not string comparison)
 
-**Dedup key:** `(alertId, event.externalId ?? event.id)`. One attempt per key for MVP.
+Dedupe is **not** part of matching; it runs only in notification processing.
+
+### Severity ordinal map
+
+```
+low    = 1
+medium = 2
+high   = 3
+```
+
+Compare numeric ranks: `rank(event.severity) >= rank(alert.minSeverity)`.  
+Do **not** use lexicographic string compare (`"high" < "low" < "medium"`).
 
 ## Notification-processing flow
 
@@ -153,15 +171,16 @@ An alert matches an event when all are true:
 for each matched alert:
   dedupeKey = event.externalId ?? event.id
   if delivery exists for (alertId, dedupeKey):
-    record skipped_duplicate (or no-op if unique constraint)
+    // already processed (sent or failed) — failed is terminal
+    bump skipped count only; do not insert another row
     continue
 
   adapter = ChannelRegistry.get(alert.channel)
   try:
     adapter.send({ destination, event, alert })
-    record Delivery status=sent
+    record Delivery { dedupe_key, status=sent }
   catch:
-    record Delivery status=failed, error=message
+    record Delivery { dedupe_key, status=failed, error=message }
 ```
 
 Adapters for MVP **simulate** success (log to console). Optional: force-fail via destination magic string (e.g. `fail@example.com`) to demo failure path.
@@ -208,8 +227,8 @@ Token can be a random string stored in a `Map` (or signed JWT if already familia
 | User hits admin route | 403 |
 | Invalid category/channel/severity | 400 |
 | Toggle/list unknown alert | 404; user cannot toggle others’ alerts |
-| Adapter throws / simulated fail | Delivery `failed` + error; event still saved; other alerts continue |
-| Duplicate event identity for same alert | Delivery `skipped_duplicate` (or unique constraint → skip) |
+| Adapter throws / simulated fail | Delivery `failed` + error; event still saved; other alerts continue; that `(alert, dedupe_key)` is terminal |
+| Duplicate event identity for same alert | No second delivery row; response `skipped` count only |
 | Unknown channel on old alert | Fail that delivery; don’t crash the whole batch |
 | Process crash mid-batch | Some deliveries missing; acceptable for MVP (no outbox) |
 | Store full / memory reset on restart | Expected with in-memory; document “refresh loses data” |
