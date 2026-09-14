@@ -70,6 +70,7 @@ Database: PostgreSQL
 
 ## Out of the Scope
 
+Geo, keywords, free text for events
 Live feeds from news/markets/disaster APIs
 Smart ranking, ML, “importance” inference
 Full auth (SSO, invites, permissions matrix)
