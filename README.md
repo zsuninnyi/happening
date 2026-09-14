@@ -25,6 +25,7 @@ Since the time is short and the capacity is not endless I would define here what
 
 ## The users can
 
+- Log in with hardcoded credentials
 - Create an alert
 - Set a name and the categories they're interested in (maybe severity)
 - Choose a notification channel (Slack / email)
@@ -34,11 +35,13 @@ Since the time is short and the capacity is not endless I would define here what
 
 ## The admin can
 
+- Log in with hardcoded credentials
 - Listing the events
 - Listing the users
 - Listing the configured alerts
 - Listing the alerts history
 - Turn on / off alerts
+- Create a test event
 
 ## The system can
 
@@ -55,7 +58,7 @@ Since the time is short and the capacity is not endless I would define here what
 - A Database (PostgreSQL?)
 - Event processor
   - Mathicng
-- Notification service (sending the notification via multiple channels, email, Slack and others in the future)
+- Notification service (adapter) (sending the notification via multiple channels, email, Slack and others in the future)
 
 ## Technologies (TBD)
 
@@ -64,3 +67,16 @@ Frontend: React
 Backend: NodeJS
 API: REST
 Database: PostgreSQL
+
+## Out of the Scope
+
+Live feeds from news/markets/disaster APIs
+Smart ranking, ML, “importance” inference
+Full auth (SSO, invites, permissions matrix)
+Multi-tenant orgs, billing, rate plans
+Rich Slack apps (OAuth install, interactive messages)
+Guaranteed delivery, retries with backoff, DLQs (log failure is enough)
+Mobile apps, push, SMS, webhooks as user channels
+Real-time UI (websockets)
+Beautiful design system / marketing site
+Horizontal scale, multi-region, observability suite
