@@ -60,13 +60,37 @@ Since the time is short and the capacity is not endless I would define here what
   - Mathicng
 - Notification service (adapter) (sending the notification via multiple channels, email, Slack and others in the future)
 
-## Technologies (TBD)
+## Technologies
 
-Language: Typescript
-Frontend: React
-Backend: NodeJS
-API: REST
-Database: PostgreSQL
+Language: TypeScript  
+Frontend: React, Vite, TanStack Query, TanStack Router, Zod  
+Backend: Node.js, Express, Zod  
+ORM: Prisma  
+Database: SQLite locally (swap to PostgreSQL via Prisma `provider` + `DATABASE_URL`)
+
+## Run locally
+
+```bash
+cp .env.example .env
+npm install
+npm run db:push -w server
+npm run dev
+```
+
+- API: http://localhost:3001 (`GET /api/health`)
+- UI: http://localhost:5173
+
+Other useful scripts: `npm run lint`, `npm run test`, `npm run format`
+
+### ORM / database note
+
+**Prisma + SQLite** is the default so the app runs with a real DB and no Docker. Domain models are not defined yet (scaffold `Meta` placeholder only).
+
+To move to PostgreSQL later:
+
+1. Set `DATABASE_URL` to a Postgres connection string
+2. In `server/prisma/schema.prisma`, set `provider = "postgresql"`
+3. Run `npm run db:migrate -w server`
 
 ## Out of the Scope
 

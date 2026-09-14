@@ -4,7 +4,7 @@ Total implementation time: ~3.5–4 hours.
 Order work so a working end-to-end solution exists as early as possible.  
 Prioritize functionality over polishing.
 
-**Run story:** root `npm install` once, then `npm run dev` starts API + UI (e.g. `concurrently`). In-memory store; no Docker/Postgres.
+**Run story:** root `npm install` once, then `npm run db:push -w server` and `npm run dev` starts API + UI. Prisma + SQLite locally (Postgres optional later); no Docker required for MVP.
 
 **E2E milestone:** after Step 4 you can prove the product with curl (login → alert → fire event → deliveries). UI comes after.
 
@@ -28,6 +28,7 @@ Suggested layout:
 **Goal:** Empty API + empty React app start locally with one command.
 
 **Files / modules likely created:**
+
 - `package.json`
 - `server/package.json`
 - `server/src/index.ts`
@@ -35,6 +36,7 @@ Suggested layout:
 - Run section in `README.md`
 
 **Acceptance criteria:**
+
 - `npm run dev` serves API health (`GET /api/health`) and Vite UI
 
 ---
@@ -48,12 +50,14 @@ Suggested layout:
 **Goal:** Shared types + mutable store + seed users.
 
 **Files / modules likely created:**
+
 - `server/src/domain/types.ts` (User, Alert, Event, Delivery, enums)
 - `server/src/domain/severity.ts` (ordinal map)
 - `server/src/store/memoryStore.ts`
 - `server/src/store/seed.ts`
 
 **Acceptance criteria:**
+
 - Seed: 1 admin + 1–2 users
 - Store can CRUD alerts/events/deliveries in memory
 - Unique check on `(alertId, dedupeKey)`
@@ -69,11 +73,13 @@ Suggested layout:
 **Goal:** Hardcoded login + bearer token + role gate.
 
 **Files / modules likely created:**
+
 - `server/src/auth/tokens.ts`
 - `server/src/auth/middleware.ts`
 - `server/src/routes/auth.ts`
 
 **Acceptance criteria:**
+
 - `POST /api/auth/login` returns token + user **without password**
 - `Authorization: Bearer` required on protected routes
 - Non-admin → 403 on `/api/admin/*`
@@ -89,10 +95,12 @@ Suggested layout:
 **Goal:** Create / list / toggle own alerts.
 
 **Files / modules likely created:**
+
 - `server/src/routes/alerts.ts`
 - `server/src/services/alerts.ts`
 
 **Acceptance criteria:**
+
 - Authenticated user: `POST/GET /api/alerts`, `PATCH /api/alerts/:id` `{ enabled }`
 - `categories.length >= 1`
 - Default `minSeverity = low`
@@ -109,6 +117,7 @@ Suggested layout:
 **Goal:** Admin fires event → match → simulated channels → deliveries + counts.
 
 **Files / modules likely created:**
+
 - `server/src/matching/matchAlerts.ts`
 - `server/src/channels/types.ts`
 - `server/src/channels/emailChannel.ts`
@@ -120,6 +129,7 @@ Suggested layout:
 - Tests for matcher + notification/dedupe logic
 
 **Acceptance criteria:**
+
 - `POST /api/admin/events` persists event, notifies matching alerts via adapters (console log)
 - Returns `{ matched, sent, failed, skipped }`
 - Dedupe: second fire same `externalId` → skip count only, no second row
@@ -127,6 +137,7 @@ Suggested layout:
 - Unknown channel fails that delivery only
 
 **Tests:**
+
 - Unit tests for matcher (category, severity ordinals, disabled)
 - Unit tests for notification/dedupe (sent, skip, failed terminal)
 - Fast; no HTTP required
@@ -144,10 +155,12 @@ Suggested layout:
 **Goal:** Read paths for demo / UI.
 
 **Files / modules likely created:**
+
 - `server/src/routes/deliveries.ts`
 - `server/src/routes/admin.ts` (events list, alerts, deliveries, users, admin toggle)
 
 **Acceptance criteria:**
+
 - `GET /api/deliveries` (own)
 - Admin `GET` events / alerts / deliveries / users
 - `PATCH /api/admin/alerts/:id`
@@ -163,6 +176,7 @@ Suggested layout:
 **Goal:** Thin screens to drive the loop; no polish.
 
 **Files / modules likely created:**
+
 - `client/src/api.ts`
 - `client/src/AuthContext.tsx`
 - Pages: `Login`, `Alerts`, `History`
@@ -170,6 +184,7 @@ Suggested layout:
 - Basic router + nav by role
 
 **Acceptance criteria:**
+
 - User: login → create alert → see list/toggle → see history
 - Admin: login → fire test event → see events/deliveries; toggle any alert
 - Functional forms/tables only
@@ -185,10 +200,12 @@ Suggested layout:
 **Goal:** One-command local run + credentials documented.
 
 **Files / modules likely created:**
+
 - Root `package.json` scripts
 - Short “Run locally” in `README.md` (seed emails/passwords)
 
 **Acceptance criteria:**
+
 - Fresh clone: `npm install && npm run dev`
 - Full loop in browser without manual curl
 
@@ -196,16 +213,16 @@ Suggested layout:
 
 ## Suggested timeline
 
-| Step | Time | Cumulative |
-| --- | --- | --- |
-| 0 Scaffold | 25m | 25m |
-| 1 Store/types | 25m | 50m |
-| 2 Auth | 20m | 1h10 |
-| 3 Alerts | 25m | 1h35 |
-| 4 E2E pipeline + tests | 50m | 2h25 |
-| 5 Admin/history APIs | 20m | 2h45 |
-| 6 UI | 55m | 3h40 |
-| 7 Run docs/smoke | 15m | ≈3h55 |
+| Step                   | Time | Cumulative |
+| ---------------------- | ---- | ---------- |
+| 0 Scaffold             | 25m  | 25m        |
+| 1 Store/types          | 25m  | 50m        |
+| 2 Auth                 | 20m  | 1h10       |
+| 3 Alerts               | 25m  | 1h35       |
+| 4 E2E pipeline + tests | 50m  | 2h25       |
+| 5 Admin/history APIs   | 20m  | 2h45       |
+| 6 UI                   | 55m  | 3h40       |
+| 7 Run docs/smoke       | 15m  | ≈3h55      |
 
 If behind: cut Step 6 to **Login + Alerts + Admin Fire Event + one History table**; drop Admin Users page. Keep Step 4 tests.
 
@@ -213,11 +230,11 @@ If behind: cut Step 6 to **Login + Alerts + Admin Fire Event + one History table
 
 ## Test policy
 
-| Area | Tests? |
-| --- | --- |
-| Matcher + severity ranks | Yes |
-| Dedupe / failed-terminal notify logic | Yes |
-| HTTP routes, UI, adapters | No for this time box |
+| Area                                  | Tests?               |
+| ------------------------------------- | -------------------- |
+| Matcher + severity ranks              | Yes                  |
+| Dedupe / failed-terminal notify logic | Yes                  |
+| HTTP routes, UI, adapters             | No for this time box |
 
 ---
 

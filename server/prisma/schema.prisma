@@ -1,0 +1,19 @@
+// Prisma ORM — SQLite for zero-Docker local runs.
+// To use PostgreSQL later, change provider to "postgresql" and set DATABASE_URL accordingly.
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// Domain models will be added in later implementation steps.
+// Placeholder keeps `prisma generate` / `db push` working during scaffold.
+model Meta {
+  id        String   @id @default(cuid())
+  key       String   @unique
+  value     String
+  createdAt DateTime @default(now())
+}

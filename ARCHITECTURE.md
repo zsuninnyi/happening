@@ -26,16 +26,16 @@ One **modular monolith**: React SPA + Node/TypeScript REST API in a single deplo
 
 ## Main backend modules
 
-| Module | Responsibility |
-| --- | --- |
-| `auth` | Hardcoded seed users; login; issue demo token; role checks |
-| `alerts` | Create/list/toggle alerts (user-scoped) |
-| `events` | Persist events; kick off processing on create |
-| `matching` | Pure rules: enabled + category + severity |
-| `notifications` | Orchestrate send + record `Delivery`; use channel registry |
-| `channels` | `NotificationChannel` interface + email/slack adapters + registry |
-| `admin` | Cross-user lists; admin toggle; thin wrappers over stores |
-| `store` | Users, alerts, events, deliveries (memory or Postgres) |
+| Module          | Responsibility                                                    |
+| --------------- | ----------------------------------------------------------------- |
+| `auth`          | Hardcoded seed users; login; issue demo token; role checks        |
+| `alerts`        | Create/list/toggle alerts (user-scoped)                           |
+| `events`        | Persist events; kick off processing on create                     |
+| `matching`      | Pure rules: enabled + category + severity                         |
+| `notifications` | Orchestrate send + record `Delivery`; use channel registry        |
+| `channels`      | `NotificationChannel` interface + email/slack adapters + registry |
+| `admin`         | Cross-user lists; admin toggle; thin wrappers over stores         |
+| `store`         | Users, alerts, events, deliveries (memory or Postgres)            |
 
 Keep folders/modules as boundaries, not separate services. Controllers call services; services call store + matching + notifications.
 
@@ -100,6 +100,7 @@ deliveries
 **Seed:** 1 admin + 1–2 users. No other tables.
 
 **Dedupe semantics:**
+
 - `dedupe_key` = `event.externalId ?? event.id`
 - Unique `(alert_id, dedupe_key)` means the alert was already processed for that identity
 - On hit: **do not insert a second row**; only bump `skipped` in the response counts
@@ -209,29 +210,29 @@ No changes to matching, event ingest, or delivery schema beyond accepting the ne
 
 ## Security considerations (MVP-honest)
 
-| Do | Don’t |
-| --- | --- |
-| Hardcoded seed users + bearer token in memory | Real OAuth/SSO |
-| Role check on admin routes | Fine-grained permissions |
-| Scope user alert/delivery queries by `userId` | Trust client-sent userId |
-| Validate enums/channel type server-side | Expose store dump endpoints |
-| Treat passwords as demo secrets in README | Production password hashing theater unless free |
+| Do                                            | Don’t                                           |
+| --------------------------------------------- | ----------------------------------------------- |
+| Hardcoded seed users + bearer token in memory | Real OAuth/SSO                                  |
+| Role check on admin routes                    | Fine-grained permissions                        |
+| Scope user alert/delivery queries by `userId` | Trust client-sent userId                        |
+| Validate enums/channel type server-side       | Expose store dump endpoints                     |
+| Treat passwords as demo secrets in README     | Production password hashing theater unless free |
 
 Token can be a random string stored in a `Map` (or signed JWT if already familiar). CSRF less relevant for Bearer token SPA. No public event ingest URL without auth—admin-only `POST` is the simulated source.
 
 ## Failure cases
 
-| Case | Behavior |
-| --- | --- |
-| Bad login | 401 |
-| User hits admin route | 403 |
-| Invalid category/channel/severity | 400 |
-| Toggle/list unknown alert | 404; user cannot toggle others’ alerts |
-| Adapter throws / simulated fail | Delivery `failed` + error; event still saved; other alerts continue; that `(alert, dedupe_key)` is terminal |
-| Duplicate event identity for same alert | No second delivery row; response `skipped` count only |
-| Unknown channel on old alert | Fail that delivery; don’t crash the whole batch |
-| Process crash mid-batch | Some deliveries missing; acceptable for MVP (no outbox) |
-| Store full / memory reset on restart | Expected with in-memory; document “refresh loses data” |
+| Case                                    | Behavior                                                                                                    |
+| --------------------------------------- | ----------------------------------------------------------------------------------------------------------- |
+| Bad login                               | 401                                                                                                         |
+| User hits admin route                   | 403                                                                                                         |
+| Invalid category/channel/severity       | 400                                                                                                         |
+| Toggle/list unknown alert               | 404; user cannot toggle others’ alerts                                                                      |
+| Adapter throws / simulated fail         | Delivery `failed` + error; event still saved; other alerts continue; that `(alert, dedupe_key)` is terminal |
+| Duplicate event identity for same alert | No second delivery row; response `skipped` count only                                                       |
+| Unknown channel on old alert            | Fail that delivery; don’t crash the whole batch                                                             |
+| Process crash mid-batch                 | Some deliveries missing; acceptable for MVP (no outbox)                                                     |
+| Store full / memory reset on restart    | Expected with in-memory; document “refresh loses data”                                                      |
 
 No retries, DLQ, or partial-transaction saga. Persist delivery outcome is the audit trail.
 

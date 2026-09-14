@@ -1,0 +1,9 @@
+node_modules
+dist
+coverage
+.next
+.vite
+*.tsbuildinfo
+server/prisma/*.db
+server/prisma/*.db-journal
+prompt-logs
