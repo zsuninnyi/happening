@@ -71,20 +71,37 @@ Database: SQLite locally (swap to PostgreSQL via Prisma `provider` + `DATABASE_U
 ## Run locally
 
 ```bash
-cp .env.example .env
-npm install
-npm run db:push -w server
-npm run dev
+cp .env.example .env   # create local env from the example
+npm install            # install workspace dependencies
+npm run db:push        # apply Prisma schema to the local SQLite DB
+npm run db:seed        # seed demo admin + users
+npm run dev            # start API (:3001) and Vite UI (:5173)
 ```
 
 - API: http://localhost:3001 (`GET /api/health`)
 - UI: http://localhost:5173
 
-Other useful scripts: `npm run lint`, `npm run test`, `npm run format`
+**Demo users (after seed):**
+
+| Email | Password | Role |
+| --- | --- | --- |
+| `admin@happening.local` | `admin123` | admin |
+| `alice@happening.local` | `alice123` | user |
+| `bob@happening.local` | `bob123` | user |
+
+**Other useful scripts:**
+
+| Command | Description |
+| --- | --- |
+| `npm run lint` | Run ESLint on server and client |
+| `npm run test` | Run unit/integration tests |
+| `npm run format` | Format the repo with Prettier |
+| `npm run db:reset` | Reset the DB schema and re-seed demo users |
+| `npm run db:studio` | Open Prisma Studio for the local DB |
 
 ### ORM / database note
 
-**Prisma + SQLite** is the default so the app runs with a real DB and no Docker. Domain models are not defined yet (scaffold `Meta` placeholder only).
+**Prisma + SQLite** is the default so the app runs with a real DB and no Docker.
 
 To move to PostgreSQL later:
 

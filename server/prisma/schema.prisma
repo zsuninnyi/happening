@@ -9,11 +9,95 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// Domain models will be added in later implementation steps.
-// Placeholder keeps `prisma generate` / `db push` working during scaffold.
-model Meta {
-  id        String   @id @default(cuid())
-  key       String   @unique
-  value     String
-  createdAt DateTime @default(now())
+enum Role {
+  user
+  admin
+}
+
+enum Category {
+  news
+  markets
+  disasters
+}
+
+enum Severity {
+  low
+  medium
+  high
+}
+
+enum Channel {
+  email
+  slack
+}
+
+enum DeliveryStatus {
+  sent
+  failed
+}
+
+model User {
+  id         String     @id @default(cuid())
+  email      String     @unique
+  name       String
+  password   String
+  role       Role
+  createdAt  DateTime   @default(now())
+  alerts     Alert[]
+  deliveries Delivery[]
+  events     Event[]    @relation("EventCreator")
+}
+
+model Alert {
+  id           String     @id @default(cuid())
+  userId       String
+  name         String
+  /// JSON array of Category values, e.g. ["news","markets"]
+  categories   Json
+  minSeverity  Severity   @default(low)
+  channel      Channel
+  destination  String
+  enabled      Boolean    @default(true)
+  createdAt    DateTime   @default(now())
+  user         User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  deliveries   Delivery[]
+
+  @@index([userId])
+  @@index([enabled])
+}
+
+model Event {
+  id          String     @id @default(cuid())
+  externalId  String?
+  title       String
+  summary     String?
+  category    Category
+  severity    Severity
+  createdById String?
+  createdAt   DateTime   @default(now())
+  createdBy   User?      @relation("EventCreator", fields: [createdById], references: [id], onDelete: SetNull)
+  deliveries  Delivery[]
+
+  @@index([externalId])
+  @@index([category])
+}
+
+model Delivery {
+  id          String         @id @default(cuid())
+  eventId     String
+  alertId     String
+  userId      String
+  dedupeKey   String
+  channel     Channel
+  destination String
+  status      DeliveryStatus
+  error       String?
+  createdAt   DateTime       @default(now())
+  event       Event          @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  alert       Alert          @relation(fields: [alertId], references: [id], onDelete: Cascade)
+  user        User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([alertId, dedupeKey])
+  @@index([userId])
+  @@index([eventId])
 }

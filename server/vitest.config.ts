@@ -5,5 +5,9 @@ export default defineConfig({
     globals: true,
     environment: 'node',
     include: ['src/**/*.test.ts'],
+    env: {
+      // Prisma resolves SQLite paths relative to the prisma/ directory.
+      DATABASE_URL: process.env.DATABASE_URL ?? 'file:./dev.db',
+    },
   },
 });

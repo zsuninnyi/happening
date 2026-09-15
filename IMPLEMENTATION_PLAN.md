@@ -41,27 +41,29 @@ Suggested layout:
 
 ---
 
-## Step 1 — Domain types, seed, in-memory store
+## Step 1 — Domain types, Prisma schema, seed
 
 - **Approx time:** 25 min
 - **Depends on:** Step 0
-- **Should add tests:** no
+- **Should add tests:** yes (domain + unique constraint)
 
-**Goal:** Shared types + mutable store + seed users.
+**Goal:** Zod domain types + Prisma models/relations + seed users (no in-memory store).
 
 **Files / modules likely created:**
 
-- `server/src/domain/types.ts` (User, Alert, Event, Delivery, enums)
-- `server/src/domain/severity.ts` (ordinal map)
-- `server/src/store/memoryStore.ts`
-- `server/src/store/seed.ts`
+- `server/prisma/schema.prisma` (User, Alert, Event, Delivery)
+- `server/prisma/seed.ts`
+- `server/src/domain/types.ts`
+- `server/src/domain/severity.ts`
+- `server/src/domain/dedupe.ts`
+- `server/src/domain/categories.ts`
 
 **Acceptance criteria:**
 
 - Seed: 1 admin + 1–2 users
-- Store can CRUD alerts/events/deliveries in memory
-- Unique check on `(alertId, dedupeKey)`
-
+- Prisma relations for users ↔ alerts/events/deliveries
+- Unique constraint on `(alertId, dedupeKey)`
+- Severity ordinal helpers (not string compare)
 ---
 
 ## Step 2 — Auth (login + middleware)

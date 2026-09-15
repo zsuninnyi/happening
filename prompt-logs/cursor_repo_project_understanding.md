@@ -1,5 +1,5 @@
 # Repo project understanding
-_Exported on 9/14/2026 at 22:34:37 GMT+2 from Cursor (3.17.8)_
+_Exported on 9/15/2026 at 08:43:42 GMT+2 from Cursor (3.17.8)_
 
 ---
 
@@ -1231,4 +1231,82 @@ output_path: /Users/vvasas/.cursor/projects/Users-vvasas-Desktop-dev-happening/t
 **Cursor**
 
 The earlier `npm run dev` smoke session recovered after some Prisma client regenerations and is listening again on http://localhost:3001.
+
+---
+
+**User**
+
+As a senior developer who think through the the next implementation sptep based on the @IMPLEMENTATION_PLAN.md what whould be the next step?
+Do not implement anything just verify the next step.
+
+---
+
+**Cursor**
+
+**Next step: Step 1** — domain types, seed, and persistence.
+
+Step 0 is done (scaffold, health, Prisma client). Nothing from Step 1 exists yet (`domain/`, `store/`, real schema models).
+
+One adjustment vs the written plan: Step 1 still says **in-memory store**. You already chose **Prisma + SQLite**, so treat Step 1 as:
+
+- Prisma models for User / Alert / Event / Delivery (+ enums / severity ordinals)
+- Seed script (1 admin + 1–2 users)
+- Unique `(alertId, dedupeKey)` on deliveries  
+- Drop `memoryStore.ts` unless you keep a thin repository wrapper over Prisma
+
+Do **not** jump to Step 2 (auth) until that data layer and seed are in place.
+
+---
+
+**User**
+
+Implement the Step 1 based on the plan but drop the memoryStore from the design.
+Use:
+- typescript
+- zod
+- proper relationships
+
+Keep the domain minimal.
+Do not add any functionality beyond the MVP requirements.
+Add unit tests.  
+
+---
+
+**Cursor**
+
+Implementing Step 1 with Prisma models, Zod domain types, seed data, and unit tests—no in-memory store.
+
+Vitest wasn't loading `DATABASE_URL` — fixing that and re-running tests.
+
+Isolating the unique-constraint test so it won't wipe seed users, and making the seed script sandbox-friendly.
+
+Step 1 is done with Prisma (no in-memory store).
+
+### What landed
+- **Prisma models:** `User`, `Alert`, `Event`, `Delivery` with relations + `@@unique([alertId, dedupeKey])`
+- **Zod domain:** enums, entity schemas, `createAlertInput` / `createEventInput`
+- **Helpers:** severity ordinals, `buildDedupeKey`, `parseCategories`
+- **Seed:** admin + Alice + Bob (`npm run db:seed`)
+- **Tests:** 17 passing (severity, dedupe, Zod, unique constraint)
+
+### Commands
+```bash
+npm run db:push
+npm run db:seed
+npm run test -w server
+```
+
+Next up per plan: **Step 2 — Auth**.
+
+---
+
+**User**
+
+Add description to the commands to the Run locally section
+
+---
+
+**Cursor**
+
+Updated the **Run locally** section: inline comments on the setup commands, and a short table for the other scripts. Also removed the stale “Meta placeholder” note under the ORM section.
 

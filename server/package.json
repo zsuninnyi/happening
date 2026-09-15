@@ -13,7 +13,9 @@
     "db:generate": "dotenv -e ../.env -- prisma generate",
     "db:push": "dotenv -e ../.env -- prisma db push",
     "db:migrate": "dotenv -e ../.env -- prisma migrate dev",
-    "db:studio": "dotenv -e ../.env -- prisma studio"
+    "db:seed": "dotenv -e ../.env -- node --import tsx prisma/seed.ts",
+    "db:studio": "dotenv -e ../.env -- prisma studio",
+    "db:reset": "dotenv -e ../.env -- prisma db push --force-reset && npm run db:seed"
   },
   "dependencies": {
     "@prisma/client": "^6.5.0",
@@ -33,5 +35,8 @@
     "typescript": "^5.8.2",
     "typescript-eslint": "^8.26.1",
     "vitest": "^3.0.8"
+  },
+  "prisma": {
+    "seed": "dotenv -e ../.env -- node --import tsx prisma/seed.ts"
   }
 }
