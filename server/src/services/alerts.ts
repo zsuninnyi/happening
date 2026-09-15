@@ -1,4 +1,3 @@
-import type { Alert as PrismaAlert } from '@prisma/client';
 import { z } from 'zod';
 import { prisma } from '../db/prisma.js';
 import { parseCategories } from '../domain/categories.js';
@@ -20,7 +19,19 @@ export class AlertError extends Error {
   }
 }
 
-export function toAlert(row: PrismaAlert): Alert {
+type AlertRow = {
+  id: string;
+  userId: string;
+  name: string;
+  categories: unknown;
+  minSeverity: Alert['minSeverity'];
+  channel: Alert['channel'];
+  destination: string;
+  enabled: boolean;
+  createdAt: Date;
+};
+
+export function toAlert(row: AlertRow): Alert {
   return {
     id: row.id,
     userId: row.userId,

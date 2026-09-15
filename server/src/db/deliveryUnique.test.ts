@@ -1,4 +1,4 @@
-import { Category, Channel, DeliveryStatus, PrismaClient, Severity } from '@prisma/client';
+import { Category, Channel, PrismaClient, Severity } from '@prisma/client';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { buildDedupeKey } from '../domain/dedupe.js';
 
@@ -67,7 +67,7 @@ describe('Delivery unique (alertId, dedupeKey)', () => {
         dedupeKey,
         channel: Channel.email,
         destination: alert.destination,
-        status: DeliveryStatus.sent,
+        status: 'sent',
       },
     });
 
@@ -80,7 +80,7 @@ describe('Delivery unique (alertId, dedupeKey)', () => {
           dedupeKey,
           channel: Channel.email,
           destination: alert.destination,
-          status: DeliveryStatus.failed,
+          status: 'failed',
           error: 'should not insert',
         },
       }),

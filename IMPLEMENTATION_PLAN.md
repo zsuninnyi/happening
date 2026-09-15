@@ -64,6 +64,7 @@ Suggested layout:
 - Prisma relations for users ↔ alerts/events/deliveries
 - Unique constraint on `(alertId, dedupeKey)`
 - Severity ordinal helpers (not string compare)
+
 ---
 
 ## Step 2 — Auth (login + middleware)
@@ -86,25 +87,28 @@ Suggested layout:
 
 ---
 
-## Step 3 — Alerts API (user)
+## Step 3 — Alerts API (user + admin toggle)
 
 - **Approx time:** 25 min
 - **Depends on:** Step 2
-- **Should add tests:** yes (create/list scope, toggle ownership, validation)
+- **Should add tests:** yes (create/list scope, toggle ownership, admin toggle, validation)
+- **Status:** done
 
-**Goal:** Create / list / toggle own alerts.
+**Goal:** Create / list / toggle own alerts; admin can toggle any alert.
 
-**Files / modules likely created:**
+**Files / modules:**
 
 - `server/src/routes/alerts.ts`
+- `server/src/routes/admin.ts` (`PATCH /alerts/:id`)
 - `server/src/services/alerts.ts`
 
 **Acceptance criteria:**
 
 - Authenticated user: `POST/GET /api/alerts`, `PATCH /api/alerts/:id` `{ enabled }`
+- Admin: `PATCH /api/admin/alerts/:id` `{ enabled }` for any user’s alert
 - `categories.length >= 1`
 - Default `minSeverity = low`
-- Cannot toggle another user’s alert (404)
+- User cannot toggle another user’s alert (404)
 
 ---
 
@@ -112,11 +116,12 @@ Suggested layout:
 
 - **Approx time:** 45–50 min
 - **Depends on:** Steps 1–3
-- **Should add tests:** yes
+- **Should add tests:** yes (matcher, notify/dedupe, channel adapters, MVP e2e path)
+- **Status:** done
 
 **Goal:** Admin fires event → match → simulated channels → deliveries + counts.
 
-**Files / modules likely created:**
+**Files / modules:**
 
 - `server/src/matching/matchAlerts.ts`
 - `server/src/channels/types.ts`
@@ -125,24 +130,26 @@ Suggested layout:
 - `server/src/channels/registry.ts`
 - `server/src/services/notifications.ts`
 - `server/src/services/events.ts`
-- `server/src/routes/adminEvents.ts`
-- Tests for matcher + notification/dedupe logic
+- `server/src/routes/admin.ts` (`POST /events`)
+- `server/src/e2e/mvpFlow.test.ts`
 
 **Acceptance criteria:**
 
 - `POST /api/admin/events` persists event, notifies matching alerts via adapters (console log)
-- Returns `{ matched, sent, failed, skipped }`
+- Returns `{ event, counts: { matched, sent, failed, skipped } }`
 - Dedupe: second fire same `externalId` → skip count only, no second row
-- `fail@…` (or similar) → `failed` terminal
+- Destination `fail@…` → `failed` terminal
 - Unknown channel fails that delivery only
+- Sync processing in-request (no queue)
 
 **Tests:**
 
-- Unit tests for matcher (category, severity ordinals, disabled)
-- Unit tests for notification/dedupe (sent, skip, failed terminal)
-- Fast; no HTTP required
+- Unit: matcher (category, severity ordinals, disabled)
+- Unit: notification/dedupe (sent, skip, failed terminal)
+- Unit: channel registry / simulated failure
+- E2E path (service-level): login → create alert → fire event → dedupe → admin disable alert
 
-**Curl happy path here = MVP core proven.**
+**Manual curl happy path also proves the MVP core.**
 
 ---
 
@@ -151,19 +158,20 @@ Suggested layout:
 - **Approx time:** 20 min
 - **Depends on:** Step 4
 - **Should add tests:** no
+- **Status:** pending
 
 **Goal:** Read paths for demo / UI.
 
 **Files / modules likely created:**
 
 - `server/src/routes/deliveries.ts`
-- `server/src/routes/admin.ts` (events list, alerts, deliveries, users, admin toggle)
+- Remaining admin `GET`s on `server/src/routes/admin.ts` (events, alerts, deliveries, users)
 
 **Acceptance criteria:**
 
 - `GET /api/deliveries` (own)
 - Admin `GET` events / alerts / deliveries / users
-- `PATCH /api/admin/alerts/:id`
+- Admin alert toggle already done in Step 3 (`PATCH /api/admin/alerts/:id`) — do not reimplement
 
 ---
 

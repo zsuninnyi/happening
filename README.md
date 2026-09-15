@@ -70,16 +70,19 @@ Database: SQLite locally (swap to PostgreSQL via Prisma `provider` + `DATABASE_U
 
 ## API (implemented so far)
 
-| Method  | Path                    | Access        | Notes                                     |
-| ------- | ----------------------- | ------------- | ----------------------------------------- |
-| `GET`   | `/api/health`           | public        | API + DB check                            |
-| `POST`  | `/api/auth/login`       | public        | `{ email, password }` → `{ token, user }` |
-| `GET`   | `/api/alerts`           | authenticated | own alerts                                |
-| `POST`  | `/api/alerts`           | authenticated | create alert                              |
-| `PATCH` | `/api/alerts/:id`       | authenticated | `{ enabled }` only; 404 if not owned      |
-| `PATCH` | `/api/admin/alerts/:id` | admin         | `{ enabled }` for any user’s alert        |
+| Method  | Path                    | Access        | Notes                                                  |
+| ------- | ----------------------- | ------------- | ------------------------------------------------------ |
+| `GET`   | `/api/health`           | public        | API + DB check                                         |
+| `POST`  | `/api/auth/login`       | public        | `{ email, password }` → `{ token, user }`              |
+| `GET`   | `/api/alerts`           | authenticated | own alerts                                             |
+| `POST`  | `/api/alerts`           | authenticated | create alert                                           |
+| `PATCH` | `/api/alerts/:id`       | authenticated | `{ enabled }` only; 404 if not owned                   |
+| `PATCH` | `/api/admin/alerts/:id` | admin         | `{ enabled }` for any user’s alert                     |
+| `POST`  | `/api/admin/events`     | admin         | fire test event → match → notify → `{ event, counts }` |
 
-Other admin list/fire-event routes and deliveries come in later steps. `/api/admin/*` requires an admin bearer token.
+Simulated channels log to the server console. Destinations starting with `fail@` force a failed delivery (terminal for that dedupe key).
+
+History list endpoints (`GET /api/deliveries`, admin GETs) come in the next step.
 
 ## Run locally
 
@@ -111,6 +114,18 @@ npm run dev            # start API (:3001) and Vite UI (:5173)
 | `npm run format`    | Format the repo with Prettier              |
 | `npm run db:reset`  | Reset the DB schema and re-seed demo users |
 | `npm run db:studio` | Open Prisma Studio for the local DB        |
+
+### Run the MVP e2e test
+
+Service-level backend path (no browser): login → create alert → admin fire event → dedupe → admin disable alert.
+
+Requires a seeded DB (`npm run db:push` and `npm run db:seed` if you haven’t already).
+
+```bash
+npm run test -w server -- src/e2e/mvpFlow.test.ts
+```
+
+Suite file: `server/src/e2e/mvpFlow.test.ts`. Full server tests: `npm run test -w server`.
 
 ### ORM / database note
 
