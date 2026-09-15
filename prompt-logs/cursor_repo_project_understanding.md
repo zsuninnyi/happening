@@ -1,5 +1,5 @@
 # Repo project understanding
-_Exported on 9/15/2026 at 13:26:27 GMT+2 from Cursor (3.17.8)_
+_Exported on 9/15/2026 at 13:39:55 GMT+2 from Cursor (3.17.8)_
 
 ---
 
@@ -1682,4 +1682,113 @@ Fixed and verified.
 **Change:** dropped `import type { Event as PrismaEvent } from '@prisma/client'` (and the same for `Alert` in `alerts.ts`). Mappers now take a small structural row type built from our domain types.
 
 **Why:** Prisma model types like `Event` only exist on the generated client. The IDE often resolves a stub `@prisma/client` without those exports, so you get false “no exported member” errors. Structural typing avoids that without changing runtime behavior.
+
+---
+
+**User**
+
+Investigate the next implementation step (Step 5). Everything should be in place. No other requirements must there just the MVP.
+Check the implementation plan.
+No new technologies needed.
+No other requirements needed.
+
+---
+
+**Cursor**
+
+## Verdict
+
+**Step 5 is still viable and is the right next step.** It’s thin read-only APIs on top of data you already write. No new tech, no new product requirements.
+
+---
+
+## What’s already in place
+
+| Need for Step 5 | Status |
+|---|---|
+| Auth + admin gate | Done |
+| `Delivery` / `Event` / `Alert` / `User` in Prisma | Done |
+| Deliveries created on notify | Done |
+| Admin `PATCH /api/admin/alerts/:id` | Done — **do not rebuild** |
+| Admin `POST /api/admin/events` | Done |
+| `GET` deliveries / admin lists | **Missing** |
+
+---
+
+## MVP gaps this step closes
+
+From the README:
+
+- User: **listing alerts history** → `GET /api/deliveries` (own only)  
+- Admin: **list events, users, alerts, history** → admin `GET`s  
+
+Everything else in the MVP “system can” / fire-event path is already done in Step 4.
+
+---
+
+## What to implement (only this)
+
+Reuse Express + Prisma + existing mappers (`toAlert`, `toEvent`, strip passwords on users).
+
+| Endpoint | Scope |
+|---|---|
+| `GET /api/deliveries` | `requireAuth`; filter `userId = req.user.id` |
+| `GET /api/admin/events` | all events |
+| `GET /api/admin/alerts` | all alerts |
+| `GET /api/admin/deliveries` | all deliveries |
+| `GET /api/admin/users` | users as **public** shape (no password) |
+
+Mount user deliveries on a small `deliveries` router; add the four GETs on existing `adminRouter`.
+
+**Out of scope for Step 5:** pagination, filters, edit/delete, analytics, UI (Step 6), retries, new channels.
+
+**Tests:** plan says optional; a couple of ownership checks (user doesn’t see others’ deliveries; non-admin → 403 on admin GETs) are enough if you add any.
+
+---
+
+## Bottom line
+
+Do Step 5 exactly as the plan says (minus admin toggle). After it, the backend covers the full MVP API surface; Step 6 is only the React shell on top.
+
+---
+
+**User**
+
+Implement that step. 
+No new reuqirements needed beyond the MVP and no new technologoies needed to be involved.
+Provide test for the functionality of the step.
+If it is possible the e2e is also needed.
+
+---
+
+**Cursor**
+
+Implementing Step 5 read APIs with tests and extending the e2e path.
+
+Step 5 is done. Backend MVP list/history APIs are in place.
+
+### Added
+- `GET /api/deliveries` — own history  
+- `GET /api/admin/events|alerts|deliveries|users` — admin lists (users without passwords)  
+
+### Tests (54 passing)
+- `lists.test.ts` — delivery ownership + admin lists  
+- E2E extended: login → alert → fire → **history lists** → dedupe → admin disable  
+
+### Docs
+- README API table + plan Step 5 marked done  
+
+Next: **Step 6** (minimal React UI).
+
+---
+
+**User**
+
+Add the e2e test steps to the readme as well
+
+---
+
+**Cursor**
+
+Updated the README e2e section with the numbered steps the suite covers (login → alert → fire → history lists → dedupe → admin disable).
 
