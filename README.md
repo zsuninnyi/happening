@@ -56,8 +56,8 @@ Since the time is short and the capacity is not endless I would define here what
 - React (TypeScript) frontend (user login, config, admin)
 - Node.js (TypeScript) REST API
 - Prisma + SQLite (PostgreSQL optional later)
-- Event processor (matching) — later step
-- Notification service (channel adapters: email, Slack, extensible) — later step
+- Event processor (matching)
+- Notification service (channel adapters: email, Slack, extensible)
 
 ## Technologies
 
@@ -79,10 +79,15 @@ Database: SQLite locally (swap to PostgreSQL via Prisma `provider` + `DATABASE_U
 | `PATCH` | `/api/alerts/:id`       | authenticated | `{ enabled }` only; 404 if not owned                   |
 | `PATCH` | `/api/admin/alerts/:id` | admin         | `{ enabled }` for any user’s alert                     |
 | `POST`  | `/api/admin/events`     | admin         | fire test event → match → notify → `{ event, counts }` |
+| `GET`   | `/api/deliveries`       | authenticated | own delivery history                                   |
+| `GET`   | `/api/admin/events`     | admin         | all events                                             |
+| `GET`   | `/api/admin/alerts`     | admin         | all alerts                                             |
+| `GET`   | `/api/admin/deliveries` | admin         | all deliveries                                         |
+| `GET`   | `/api/admin/users`      | admin         | users (no passwords)                                   |
 
 Simulated channels log to the server console. Destinations starting with `fail@` force a failed delivery (terminal for that dedupe key).
 
-History list endpoints (`GET /api/deliveries`, admin GETs) come in the next step.
+Backend MVP API surface for lists/history is complete; UI is the next step.
 
 ## Run locally
 
@@ -117,7 +122,16 @@ npm run dev            # start API (:3001) and Vite UI (:5173)
 
 ### Run the MVP e2e test
 
-Service-level backend path (no browser): login → create alert → admin fire event → dedupe → admin disable alert.
+Service-level backend path (no browser). Suite: `server/src/e2e/mvpFlow.test.ts`.
+
+**Steps covered:**
+
+1. Login as user (Alice) and admin  
+2. Create an alert (news, min severity medium, email)  
+3. Admin fires a matching test event → delivery `sent`  
+4. Read history lists (user deliveries + admin events/alerts/deliveries/users)  
+5. Admin re-fires the same `externalId` → delivery skipped (dedupe)  
+6. Admin disables the alert → further matching events do not notify  
 
 Requires a seeded DB (`npm run db:push` and `npm run db:seed` if you haven’t already).
 
@@ -125,7 +139,7 @@ Requires a seeded DB (`npm run db:push` and `npm run db:seed` if you haven’t a
 npm run test -w server -- src/e2e/mvpFlow.test.ts
 ```
 
-Suite file: `server/src/e2e/mvpFlow.test.ts`. Full server tests: `npm run test -w server`.
+Full server tests: `npm run test -w server`.
 
 ### ORM / database note
 

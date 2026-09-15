@@ -61,3 +61,10 @@ export async function createAndProcessEvent(
 
   return { event, counts };
 }
+
+export async function listEvents(): Promise<Event[]> {
+  const rows = await prisma.event.findMany({
+    orderBy: { createdAt: 'desc' },
+  });
+  return rows.map(toEvent);
+}

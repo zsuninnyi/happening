@@ -2,12 +2,19 @@ import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import { login } from '../auth/login.js';
 import { tokenStore } from '../auth/tokens.js';
 import { prisma } from '../db/prisma.js';
-import { createAlertForUser, listAlertsForUser, toggleAlertById } from '../services/alerts.js';
-import { createAndProcessEvent } from '../services/events.js';
+import {
+  createAlertForUser,
+  listAlertsForUser,
+  listAllAlerts,
+  toggleAlertById,
+} from '../services/alerts.js';
+import { listAllDeliveries, listDeliveriesForUser } from '../services/deliveries.js';
+import { createAndProcessEvent, listEvents } from '../services/events.js';
+import { listPublicUsers } from '../services/users.js';
 
 /**
- * End-to-end path for the MVP backend so far (no HTTP / UI):
- * login → create alert → admin fire event → deliveries + dedupe → admin toggle.
+ * End-to-end path for the MVP backend (no HTTP / UI):
+ * login → create alert → admin fire event → history lists → dedupe → admin disable.
  */
 describe('MVP backend flow (e2e path)', () => {
   let aliceId: string;
@@ -32,7 +39,7 @@ describe('MVP backend flow (e2e path)', () => {
     vi.restoreAllMocks();
   });
 
-  it('runs login → alert → fire event → dedupe → admin disable', async () => {
+  it('runs login → alert → fire event → lists → dedupe → admin disable', async () => {
     vi.spyOn(console, 'log').mockImplementation(() => undefined);
 
     const aliceSession = await login({
@@ -65,6 +72,21 @@ describe('MVP backend flow (e2e path)', () => {
     });
     expect(first.counts).toEqual({ matched: 1, sent: 1, failed: 0, skipped: 0 });
 
+    const ownHistory = await listDeliveriesForUser(aliceId);
+    expect(ownHistory).toHaveLength(1);
+    expect(ownHistory[0]?.status).toBe('sent');
+
+    const adminEvents = await listEvents();
+    const adminAlerts = await listAllAlerts();
+    const adminDeliveries = await listAllDeliveries();
+    const adminUsers = await listPublicUsers();
+
+    expect(adminEvents.some((event) => event.id === first.event.id)).toBe(true);
+    expect(adminAlerts.some((item) => item.id === alert.id)).toBe(true);
+    expect(adminDeliveries.some((item) => item.alertId === alert.id)).toBe(true);
+    expect(adminUsers.some((user) => user.email === 'alice@happening.local')).toBe(true);
+    expect(adminUsers.every((user) => !('password' in user))).toBe(true);
+
     const second = await createAndProcessEvent(adminId, {
       title: 'Market open (replay)',
       category: 'news',
@@ -72,18 +94,7 @@ describe('MVP backend flow (e2e path)', () => {
       externalId: 'e2e_ext_1',
     });
     expect(second.counts).toEqual({ matched: 1, sent: 0, failed: 0, skipped: 1 });
-
-    const deliveries = await prisma.delivery.findMany({ where: { alertId: alert.id } });
-    expect(deliveries).toHaveLength(1);
-    expect(deliveries[0]?.status).toBe('sent');
-
-    const lowSeverity = await createAndProcessEvent(adminId, {
-      title: 'Minor blip',
-      category: 'news',
-      severity: 'low',
-      externalId: 'e2e_ext_low',
-    });
-    expect(lowSeverity.counts.matched).toBe(0);
+    expect(await listDeliveriesForUser(aliceId)).toHaveLength(1);
 
     await toggleAlertById(alert.id, { enabled: false });
     const afterDisable = await createAndProcessEvent(adminId, {

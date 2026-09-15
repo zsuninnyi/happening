@@ -53,6 +53,13 @@ export async function listAlertsForUser(userId: string): Promise<Alert[]> {
   return rows.map(toAlert);
 }
 
+export async function listAllAlerts(): Promise<Alert[]> {
+  const rows = await prisma.alert.findMany({
+    orderBy: { createdAt: 'desc' },
+  });
+  return rows.map(toAlert);
+}
+
 export async function createAlertForUser(userId: string, input: unknown): Promise<Alert> {
   const data = createAlertInputSchema.parse(input);
   const row = await prisma.alert.create({

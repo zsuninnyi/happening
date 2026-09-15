@@ -157,21 +157,25 @@ Suggested layout:
 
 - **Approx time:** 20 min
 - **Depends on:** Step 4
-- **Should add tests:** no
-- **Status:** pending
+- **Should add tests:** yes (delivery ownership, admin lists, e2e path extended)
+- **Status:** done
 
 **Goal:** Read paths for demo / UI.
 
-**Files / modules likely created:**
+**Files / modules:**
 
 - `server/src/routes/deliveries.ts`
-- Remaining admin `GET`s on `server/src/routes/admin.ts` (events, alerts, deliveries, users)
+- `server/src/services/deliveries.ts`
+- `server/src/services/users.ts`
+- `listAllAlerts` / `listEvents` on existing services
+- Admin `GET`s on `server/src/routes/admin.ts`
 
 **Acceptance criteria:**
 
 - `GET /api/deliveries` (own)
-- Admin `GET` events / alerts / deliveries / users
-- Admin alert toggle already done in Step 3 (`PATCH /api/admin/alerts/:id`) — do not reimplement
+- Admin `GET` events / alerts / deliveries / users (no passwords)
+- Admin alert toggle already done in Step 3 — not reimplemented
+  Implement that step>
 
 ---
 

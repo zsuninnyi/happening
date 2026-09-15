@@ -4,6 +4,7 @@ import type { Env } from './config/env.js';
 import { adminRouter } from './routes/admin.js';
 import { alertsRouter } from './routes/alerts.js';
 import { authRouter } from './routes/auth.js';
+import { deliveriesRouter } from './routes/deliveries.js';
 import { healthRouter } from './routes/health.js';
 
 export function createApp(env: Env) {
@@ -15,6 +16,7 @@ export function createApp(env: Env) {
   app.use('/api', healthRouter);
   app.use('/api/auth', authRouter);
   app.use('/api/alerts', alertsRouter);
+  app.use('/api/deliveries', deliveriesRouter);
   app.use('/api/admin', adminRouter);
 
   return app;
