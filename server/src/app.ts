@@ -1,6 +1,8 @@
 import cors from 'cors';
 import express from 'express';
 import type { Env } from './config/env.js';
+import { adminRouter } from './routes/admin.js';
+import { authRouter } from './routes/auth.js';
 import { healthRouter } from './routes/health.js';
 
 export function createApp(env: Env) {
@@ -10,6 +12,8 @@ export function createApp(env: Env) {
   app.use(express.json());
 
   app.use('/api', healthRouter);
+  app.use('/api/auth', authRouter);
+  app.use('/api/admin', adminRouter);
 
   return app;
 }

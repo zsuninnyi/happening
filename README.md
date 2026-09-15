@@ -122,3 +122,18 @@ To move to PostgreSQL later:
 - Real-time UI (websockets)
 - Beautiful design system / marketing site
 - Horizontal scale, multi-region, observability suite
+
+### Future security improvements (out of scope for MVP)
+
+Current auth is demo-only: plain-text seed passwords and random bearer tokens kept in process memory.
+
+Possible next steps when hardening:
+
+- **JWT (or signed sessions)** — replace opaque in-memory tokens with signed access tokens (short TTL) so APIs can verify identity without a shared token map; optional refresh tokens for longer sessions
+- **Password hashing** — store bcrypt/argon2 hashes instead of plain-text passwords; never return password fields from any API
+- **Token lifecycle** — expiry, logout/revocation list, rotate tokens on privilege change
+- **HTTPS + secure cookie option** — serve over TLS; consider `httpOnly` / `Secure` / `SameSite` cookies instead of localStorage bearers if the UI is first-party
+- **Stronger authorization** — keep role checks server-side; add resource-level checks (users only touch their own alerts) as features grow; avoid trusting client-sent `userId` / `role`
+- **Login abuse controls** — rate-limit `/auth/login`, generic 401 messages (already), optional lockout/alerting
+- **Secrets management** — move credentials and signing keys to env/secret store; no demo passwords in docs for non-local environments
+- **Later identity providers** — OAuth2/OIDC (Google, etc.) or SSO when multi-user production access is required

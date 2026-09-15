@@ -1,5 +1,5 @@
 # Repo project understanding
-_Exported on 9/15/2026 at 08:43:42 GMT+2 from Cursor (3.17.8)_
+_Exported on 9/15/2026 at 09:27:25 GMT+2 from Cursor (3.17.8)_
 
 ---
 
@@ -1309,4 +1309,80 @@ Add description to the commands to the Run locally section
 **Cursor**
 
 Updated the **Run locally** section: inline comments on the setup commands, and a short table for the other scripts. Also removed the stale “Meta placeholder” note under the ORM section.
+
+---
+
+**User**
+
+Based on the implementation plan and the tasks are done, what would be the next step in the implementation. Describe it as a senior developer.
+
+---
+
+**Cursor**
+
+**Next: Step 2 — Auth (login + middleware).**
+
+Steps 0–1 gave you a runnable app and a real data model with seed users. Nothing authenticated can sit on top of that yet, so auth is the blocker before alerts or admin APIs.
+
+What to build, kept deliberately thin:
+
+1. **`POST /api/auth/login`** — look up seeded user by email/password (plain demo check is fine), return a bearer token plus a **public** user (no password).
+2. **In-memory token map** (or equivalent) — random token → `userId` / role; no JWT/OAuth unless it’s free for you.
+3. **`requireAuth` middleware** — require `Authorization: Bearer …`, attach the user to the request.
+4. **`requireAdmin` middleware** — non-admins get **403** on `/api/admin/*`.
+
+Wire health as public; leave other routes protected once they exist. Plan says ~20 minutes and no tests required for this step—though a couple of login / 401 / 403 cases wouldn’t hurt.
+
+After this, Step 3 (alerts CRUD-lite) can assume “who is calling” is already solved.
+
+---
+
+**User**
+
+Implement the Auth step (Step 2). The user should be able to login the Admin should have get the right access. Return with proper errors (401 / 403). Do not need JWT or OAuth or any other solution for the authentication a random token is enough for now.
+Do not add any new functionality that are not part of the MVP requirements.
+Add unit tests.
+
+---
+
+**Cursor**
+
+Implementing Step 2 auth: login, bearer tokens, role middleware, and unit tests.
+
+Step 2 auth is in place.
+
+### Behavior
+- `POST /api/auth/login` `{ email, password }` → `{ token, user }` (no password)
+- Invalid credentials → **401**
+- Bad/missing bearer → **401**
+- Authenticated non-admin on `/api/admin/*` → **403**
+- Admin session passes the admin gate (random hex token in memory)
+
+### Files
+- `server/src/auth/tokens.ts` — token store  
+- `server/src/auth/login.ts` — login against seeded users  
+- `server/src/auth/middleware.ts` — `requireAuth` / `requireAdmin`  
+- `server/src/routes/auth.ts` + admin mount with gates only  
+
+### Tests
+31 passing, including token store, login, and 401/403 middleware cases.
+
+Try:
+```bash
+curl -s -X POST http://localhost:3001/api/auth/login \
+  -H 'content-type: application/json' \
+  -d '{"email":"admin@happening.local","password":"admin123"}'
+```
+
+---
+
+**User**
+
+Add proposals to the @README.md Out of Scope section how we can improve the security (e.g. with JWT)
+
+---
+
+**Cursor**
+
+Added a **Future security improvements** subsection under Out of Scope in the README — JWT/signed sessions, password hashing, token lifecycle, HTTPS/cookies, authorization, rate limiting, secrets, and OIDC/SSO as later options.
 

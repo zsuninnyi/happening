@@ -70,9 +70,7 @@ Suggested layout:
 
 - **Approx time:** 20 min
 - **Depends on:** Step 1
-- **Should add tests:** no
-
-**Goal:** Hardcoded login + bearer token + role gate.
+- **Should add tests:** yes (token store, middleware 401/403, login)
 
 **Files / modules likely created:**
 
