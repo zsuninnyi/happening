@@ -53,20 +53,33 @@ Since the time is short and the capacity is not endless I would define here what
 
 ## Architecture
 
-- React (Typescript) Frontend (user login, config, admin)
-- NodeJS (Typescript) Rest API
-- A Database (PostgreSQL?)
-- Event processor
-  - Mathicng
-- Notification service (adapter) (sending the notification via multiple channels, email, Slack and others in the future)
+- React (TypeScript) frontend (user login, config, admin)
+- Node.js (TypeScript) REST API
+- Prisma + SQLite (PostgreSQL optional later)
+- Event processor (matching) — later step
+- Notification service (channel adapters: email, Slack, extensible) — later step
 
 ## Technologies
 
 Language: TypeScript  
 Frontend: React, Vite, TanStack Query, TanStack Router, Zod  
 Backend: Node.js, Express, Zod  
+Auth: demo bearer tokens (in-memory; see security notes below)  
 ORM: Prisma  
 Database: SQLite locally (swap to PostgreSQL via Prisma `provider` + `DATABASE_URL`)
+
+## API (implemented so far)
+
+| Method  | Path                    | Access        | Notes                                     |
+| ------- | ----------------------- | ------------- | ----------------------------------------- |
+| `GET`   | `/api/health`           | public        | API + DB check                            |
+| `POST`  | `/api/auth/login`       | public        | `{ email, password }` → `{ token, user }` |
+| `GET`   | `/api/alerts`           | authenticated | own alerts                                |
+| `POST`  | `/api/alerts`           | authenticated | create alert                              |
+| `PATCH` | `/api/alerts/:id`       | authenticated | `{ enabled }` only; 404 if not owned      |
+| `PATCH` | `/api/admin/alerts/:id` | admin         | `{ enabled }` for any user’s alert        |
+
+Other admin list/fire-event routes and deliveries come in later steps. `/api/admin/*` requires an admin bearer token.
 
 ## Run locally
 
@@ -83,21 +96,21 @@ npm run dev            # start API (:3001) and Vite UI (:5173)
 
 **Demo users (after seed):**
 
-| Email | Password | Role |
-| --- | --- | --- |
+| Email                   | Password   | Role  |
+| ----------------------- | ---------- | ----- |
 | `admin@happening.local` | `admin123` | admin |
-| `alice@happening.local` | `alice123` | user |
-| `bob@happening.local` | `bob123` | user |
+| `alice@happening.local` | `alice123` | user  |
+| `bob@happening.local`   | `bob123`   | user  |
 
 **Other useful scripts:**
 
-| Command | Description |
-| --- | --- |
-| `npm run lint` | Run ESLint on server and client |
-| `npm run test` | Run unit/integration tests |
-| `npm run format` | Format the repo with Prettier |
-| `npm run db:reset` | Reset the DB schema and re-seed demo users |
-| `npm run db:studio` | Open Prisma Studio for the local DB |
+| Command             | Description                                |
+| ------------------- | ------------------------------------------ |
+| `npm run lint`      | Run ESLint on server and client            |
+| `npm run test`      | Run unit/integration tests                 |
+| `npm run format`    | Format the repo with Prettier              |
+| `npm run db:reset`  | Reset the DB schema and re-seed demo users |
+| `npm run db:studio` | Open Prisma Studio for the local DB        |
 
 ### ORM / database note
 
@@ -133,7 +146,7 @@ Possible next steps when hardening:
 - **Password hashing** — store bcrypt/argon2 hashes instead of plain-text passwords; never return password fields from any API
 - **Token lifecycle** — expiry, logout/revocation list, rotate tokens on privilege change
 - **HTTPS + secure cookie option** — serve over TLS; consider `httpOnly` / `Secure` / `SameSite` cookies instead of localStorage bearers if the UI is first-party
-- **Stronger authorization** — keep role checks server-side; add resource-level checks (users only touch their own alerts) as features grow; avoid trusting client-sent `userId` / `role`
+- **Stronger authorization** — keep role checks server-side; broaden resource-level checks as admin/cross-user APIs grow; avoid trusting client-sent `userId` / `role`
 - **Login abuse controls** — rate-limit `/auth/login`, generic 401 messages (already), optional lockout/alerting
 - **Secrets management** — move credentials and signing keys to env/secret store; no demo passwords in docs for non-local environments
 - **Later identity providers** — OAuth2/OIDC (Google, etc.) or SSO when multi-user production access is required

@@ -90,7 +90,7 @@ Suggested layout:
 
 - **Approx time:** 25 min
 - **Depends on:** Step 2
-- **Should add tests:** no
+- **Should add tests:** yes (create/list scope, toggle ownership, validation)
 
 **Goal:** Create / list / toggle own alerts.
 
@@ -104,7 +104,7 @@ Suggested layout:
 - Authenticated user: `POST/GET /api/alerts`, `PATCH /api/alerts/:id` `{ enabled }`
 - `categories.length >= 1`
 - Default `minSeverity = low`
-- Cannot toggle another user’s alert
+- Cannot toggle another user’s alert (404)
 
 ---
 

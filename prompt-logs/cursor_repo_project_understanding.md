@@ -1,5 +1,5 @@
 # Repo project understanding
-_Exported on 9/15/2026 at 09:27:25 GMT+2 from Cursor (3.17.8)_
+_Exported on 9/15/2026 at 11:47:07 GMT+2 from Cursor (3.17.8)_
 
 ---
 
@@ -1385,4 +1385,101 @@ Add proposals to the @README.md Out of Scope section how we can improve the secu
 **Cursor**
 
 Added a **Future security improvements** subsection under Out of Scope in the README — JWT/signed sessions, password hashing, token lifecycle, HTTPS/cookies, authorization, rate limiting, secrets, and OIDC/SSO as later options.
+
+---
+
+**User**
+
+Go to the next implementation step (STEP 3) in the @IMPLEMENTATION_PLAN.md . Based on the implemented funcionality investigate this step is still relevant. What should be done there. Tests are needed.
+Do not implement anything just verifying the step.
+Do not need any new functionality out of scope of the MVP.
+
+---
+
+**Cursor**
+
+**Step 3 is still relevant** — and still entirely undone as an API.
+
+What’s already in place from Steps 1–2:
+- `Alert` Prisma model + relations  
+- Zod `createAlertInputSchema` (categories ≥ 1, default `minSeverity: low`)  
+- Auth (`requireAuth`) so you can scope by `req.user.id`  
+
+What’s missing: any `routes/alerts` / `services/alerts` — no create, list, or toggle yet.
+
+### What Step 3 should cover (MVP only)
+
+| Piece | Do |
+|---|---|
+| `POST /api/alerts` | Auth required; validate with existing Zod schema; persist for `req.user.id`; `enabled: true` by default |
+| `GET /api/alerts` | Auth required; return **only** that user’s alerts (`parseCategories` on JSON) |
+| `PATCH /api/alerts/:id` | Body `{ enabled: boolean }` only — no edit of name/categories/channel |
+| Ownership | If alert missing **or** owned by someone else → **404** (don’t leak existence); never trust client `userId` |
+| Authz | `requireAuth` only — admins can use this for **their own** alerts; cross-user admin toggle stays Step 5 (`PATCH /api/admin/alerts/:id`) |
+
+**Out of this step:** deliveries history, matching/notify, admin list-all-alerts, alert delete/full update, multi-channel per alert.
+
+### Tests (plan said “no”; you want them — keep them tight)
+
+- Create/list scoped to the logged-in user  
+- Default `minSeverity` + reject empty `categories`  
+- Toggle own alert; cannot toggle another user’s (404)  
+- Unauthenticated → 401  
+
+**Verdict:** Do Step 3 as written before Step 4. Without user alerts, firing events has nothing credible to match. Reuse domain Zod + Prisma; don’t redesign.
+
+---
+
+**User**
+
+Implement the described plan.
+Do not implement any new functionality and no new technologies are needed to be introduced.
+Only need the MVP requirements.
+Correct the @README.md 
+
+---
+
+**Cursor**
+
+Implementing the Alerts API (Step 3) and updating the README to match.
+
+Step 3 is done.
+
+### Alerts API
+- `GET /api/alerts` — own alerts  
+- `POST /api/alerts` — create (default `minSeverity: low`, categories ≥ 1)  
+- `PATCH /api/alerts/:id` — `{ enabled }` only; other users’ alerts → **404**  
+- All require bearer auth  
+
+### README
+- Architecture/tech aligned with Prisma + SQLite + demo auth  
+- Added **API (implemented so far)** table  
+- Security note updated (ownership checks already exist for user alerts)  
+
+### Tests
+37 passing, including create/list scope, validation, and ownership toggle.
+
+Next per plan: **Step 4** (match + notify + fire event).
+
+---
+
+**User**
+
+An Admin should be able to toggle other users' alert.
+
+---
+
+**Cursor**
+
+Adding admin toggle for any user's alert via `PATCH /api/admin/alerts/:id`, matching the architecture.
+
+Admins can toggle any alert via:
+
+`PATCH /api/admin/alerts/:id` `{ "enabled": true|false }`
+
+- Requires admin bearer token (users get **403**)
+- Missing alert → **404**
+- Regular users still only toggle their own via `PATCH /api/alerts/:id`
+
+README and tests updated (39 passing).
 
