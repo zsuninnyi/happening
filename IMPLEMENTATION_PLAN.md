@@ -175,7 +175,6 @@ Suggested layout:
 - `GET /api/deliveries` (own)
 - Admin `GET` events / alerts / deliveries / users (no passwords)
 - Admin alert toggle already done in Step 3 — not reimplemented
-  Implement that step>
 
 ---
 
@@ -183,17 +182,17 @@ Suggested layout:
 
 - **Approx time:** 50–60 min
 - **Depends on:** Steps 2–5
-- **Should add tests:** no
+- **Should add tests:** yes (api client, auth context, login page)
+- **Status:** done
 
-**Goal:** Thin screens to drive the loop; no polish.
+**Goal:** Thin screens to drive the loop; no CSS framework / no polish.
 
-**Files / modules likely created:**
+**Files / modules:**
 
-- `client/src/api.ts`
-- `client/src/AuthContext.tsx`
-- Pages: `Login`, `Alerts`, `History`
-- Admin pages: `Events`, `Alerts`, `History`, `Users`
-- Basic router + nav by role
+- `client/src/api/*`, `client/src/auth/AuthContext.tsx`
+- Pages: Login, Alerts, History
+- Admin pages: Events, Alerts, History, Users
+- Role-based nav + plain CSS
 
 **Acceptance criteria:**
 

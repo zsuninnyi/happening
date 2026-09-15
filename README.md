@@ -87,7 +87,19 @@ Database: SQLite locally (swap to PostgreSQL via Prisma `provider` + `DATABASE_U
 
 Simulated channels log to the server console. Destinations starting with `fail@` force a failed delivery (terminal for that dedupe key).
 
-Backend MVP API surface for lists/history is complete; UI is the next step.
+Backend MVP API surface is complete. Use the React UI (no CSS framework) for the product loop.
+
+### UI routes
+
+| Path             | Who    | Purpose                           |
+| ---------------- | ------ | --------------------------------- |
+| `/login`         | public | Sign in with seeded users         |
+| `/alerts`        | user   | Create / list / toggle own alerts |
+| `/history`       | user   | Own delivery history              |
+| `/admin/events`  | admin  | Fire test events + list events    |
+| `/admin/alerts`  | admin  | List / toggle any alert           |
+| `/admin/history` | admin  | All deliveries                    |
+| `/admin/users`   | admin  | User list                         |
 
 ## Run locally
 
@@ -126,12 +138,12 @@ Service-level backend path (no browser). Suite: `server/src/e2e/mvpFlow.test.ts`
 
 **Steps covered:**
 
-1. Login as user (Alice) and admin  
-2. Create an alert (news, min severity medium, email)  
-3. Admin fires a matching test event → delivery `sent`  
-4. Read history lists (user deliveries + admin events/alerts/deliveries/users)  
-5. Admin re-fires the same `externalId` → delivery skipped (dedupe)  
-6. Admin disables the alert → further matching events do not notify  
+1. Login as user (Alice) and admin
+2. Create an alert (news, min severity medium, email)
+3. Admin fires a matching test event → delivery `sent`
+4. Read history lists (user deliveries + admin events/alerts/deliveries/users)
+5. Admin re-fires the same `externalId` → delivery skipped (dedupe)
+6. Admin disables the alert → further matching events do not notify
 
 Requires a seeded DB (`npm run db:push` and `npm run db:seed` if you haven’t already).
 
@@ -140,6 +152,17 @@ npm run test -w server -- src/e2e/mvpFlow.test.ts
 ```
 
 Full server tests: `npm run test -w server`.
+
+### Run the client tests
+
+Minimal UI tests (api client, auth context, login page). No running API required.
+
+```bash
+npm run test -w client
+```
+
+Watch mode: `npm run test:watch -w client`.  
+All workspaces (server + client): `npm run test`.
 
 ### ORM / database note
 
