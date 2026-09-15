@@ -89,6 +89,20 @@ Simulated channels log to the server console. Destinations starting with `fail@`
 
 Backend MVP API surface is complete. Use the React UI (no CSS framework) for the product loop.
 
+### MVP gaps (not done yet, not already listed under Out of Scope)
+
+These are part of a credible product loop but are still **simulated or incomplete** in this repo:
+
+- **Real email delivery** — adapters only `console.log`; no SMTP/API provider
+- **Real Slack delivery** — adapters only `console.log`; no Incoming Webhook / Slack API calls
+- **External event ingest** — events are admin-fired test events only (no provider webhook/poller beyond the admin form)
+- **Alert edit** — users can create and enable/disable; they cannot change name, categories, channel, or destination after create
+- **Auth durability** — bearer tokens live in process memory; server restart invalidates all sessions
+- **Durable DB for demos beyond local** — SQLite file is fine locally; production-shaped Postgres is optional and not wired by default
+- **Richer UI coverage** — minimal forms/tables only; limited client tests (no full browser e2e suite)
+
+Intentional non-goals remain under **Out of the Scope** below (geo/keywords, ML, SSO, retries/DLQ, etc.).
+
 ### UI routes
 
 | Path             | Who    | Purpose                           |
@@ -187,6 +201,53 @@ To move to PostgreSQL later:
 - Real-time UI (websockets)
 - Beautiful design system / marketing site
 - Horizontal scale, multi-region, observability suite
+
+## Future considerations
+
+### Application
+
+- Edit alerts after create; optional multi-channel per alert
+- Stronger matching later (geo, keywords, free text) without rewriting notify/history
+- Replace admin-only test events with a trusted ingest API (API key / signed webhook) when a real event source exists
+- Add channels by implementing the existing `NotificationChannel` interface + registry entry + enum/UI option
+
+### Security
+
+See also the hardening list below. Priorities when leaving demo mode: hashed passwords, short-lived tokens/JWT, HTTPS, server-side authorization only, secrets in env/secret store, rate-limited login.
+
+### Reliability
+
+- Keep recording `Delivery` rows as the source of truth for sent/failed
+- Add retries with backoff + dead-letter handling for transient provider errors (MVP intentionally skips this)
+- Move notify off the request thread (queue/worker) so `POST /admin/events` stays fast under load
+- Health checks for DB and notification providers; structured logs/metrics around match → send → persist
+
+### Scalability
+
+- Postgres instead of SQLite; indexes already sketched for user/alert/delivery lookups
+- Horizontal API instances need shared session/JWT verification (in-memory tokens do not share)
+- Bound fan-out: cap matched alerts per event or process deliveries asynchronously
+- Idempotency stays on `(alertId, dedupeKey)`; protect unique constraints under concurrent workers
+
+### How real email and Slack sending should be implemented
+
+Keep the current adapter pattern. Do **not** put provider SDKs inside matching or route handlers.
+
+1. **Keep the contract** — `NotificationChannel.send({ destination, event, alert })` in `server/src/channels/`.
+2. **Email adapter**
+   - Replace console logging with a provider (e.g. Resend, SendGrid, Amazon SES, or SMTP via nodemailer).
+   - Config via env: API key / SMTP URL, from-address.
+   - Treat `destination` as the recipient email.
+   - On provider error, throw (existing notify loop records `failed` + error message).
+   - Remove or gate the `fail@` simulation behind `NODE_ENV=test` / a dedicated test adapter.
+3. **Slack adapter**
+   - MVP-friendly path: **Incoming Webhook URL** stored as `destination` (or a webhook URL looked up from a channel name later).
+   - `POST` a simple JSON payload (`text` or Block Kit) with event title, category, severity, alert name.
+   - Alternative later: Slack Bolt/OAuth app posting to channel IDs — more setup, same adapter boundary.
+   - On non-2xx webhook response, throw so delivery is marked `failed`.
+4. **Register adapters** in `server/src/channels/registry.ts` the same way as today.
+5. **Do not change** matching, dedupe, or `Delivery` persistence when swapping simulated → real senders.
+6. **Secrets** — never commit provider keys; document required env vars in `.env.example` only as placeholders.
 
 ### Future security improvements (out of scope for MVP)
 
